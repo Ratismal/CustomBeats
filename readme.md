@@ -2,7 +2,7 @@
 
 CustomBeats is a mod for [UNBEATABLE: ARCADE MIX](https://dcellgames.itch.io/unbeatable-arcade-mix) which gives you the ability to load custom songs and beatmaps into the game.
 
-**PLEASE BE AWARE**: CustomBeats is an unofficial game modification, and is completely unaffiliated from both UNBEATABLE and the team at D-Cell Games. This mod is not supported or endoresed by D-Cell Games in any ways. Use at your own risk.
+**PLEASE BE AWARE**: CustomBeats is an unofficial game modification, and is completely unaffiliated from both UNBEATABLE and the team at D-Cell Games. This mod is not supported or endorsed by D-Cell Games in any way. Use at your own risk.
 
 Please support [UNBEATABLE](http://unbeatablegame.com) on [Kickstarter](https://www.kickstarter.com/projects/dcellgames/unbeatable)!
 
