@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ using Logger = BepInEx.Logging.Logger;
 
 namespace CustomBeats
 {
-    [BepInPlugin("me.stupidcat.plugins.custombeats", "Custom Beats", "1.0")]
+    [BepInPlugin("me.stupidcat.plugins.custombeats", "Custom Beats", "1.0.0")]
     public class CustomBeatsPlugin : BaseUnityPlugin
     {
         public static CustomBeatsPlugin INSTANCE;
@@ -65,7 +66,7 @@ namespace CustomBeats
             {
                 string songName = Path.GetFileNameWithoutExtension(dir);
                 Logger.LogInfo("Loading song " + songName);
-                songs.Add(songName);
+                bool hasMaps = false;
 
                 string[] osuFiles = Directory.GetFiles(dir, "*.osu");
                 foreach (var osuFile in osuFiles)
@@ -90,6 +91,12 @@ namespace CustomBeats
                     CustomBeatmapInfo beatmap = new CustomBeatmapInfo(asset, songName, difficulty, clip);
 
                     beatmaps.Add(beatmap);
+                    hasMaps = true;
+                }
+
+                if (hasMaps)
+                {
+                    songs.Add(songName);
                 }
             }
 
