@@ -14,7 +14,7 @@ You can look at BepInEx's [official install guide](https://bepinex.github.io/bep
 
 ## Installing CustomBeats
 
-1. Download the latest Custombeats release [here](https://github.com/ratismal/CustomBeats/releases)
+1. Download the latest CustomBeats release [here](https://github.com/ratismal/CustomBeats/releases)
 2. Extract the contents in your UNBEATABLE game directory, so that `BepinEx/plugins/CustomBeats/CustomBeats.dll` exists.
 3. Run `UNBEATABLE.exe`. CustomBeats will generate a `CustomBeats` folder next to `UNBEATABLE.exe`.
 
