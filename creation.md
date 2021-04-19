@@ -53,8 +53,8 @@ On UNBEATABLE's side, we currently have the following types of beats.
 | Default   | Normal | Instant | None/Clap| This is the standard beat that's on the top or bottom row.<br>If Clap is used, will hide before reaching the player.|
 | Dodge     | Normal | Instant | Whistle | This is a spike that the player has to avoid
 | Setpiece | Normal | Instant | Finish | Not sure what this is. Possibly a leftover beat from testing or debugging? In any case, you can't hit it, can't dodge it, and passing it instantly fails the song. Do not use. |
-| Hold | Normal | Hold | None/Clap | This is the standard held beat that's on the top or bottom row. |
-| Double | Normal | Hold | Whistle | This is a beat that you hit on the current row, and then hit again on the other row once it reaches the end of the held beat. <br>It acts weirdly if you have other Default beats at the same time, so use caution.<br>If Clap is used, will hide before reaching the player. |
+| Hold | Normal | Hold | None/Clap | This is the standard held beat that's on the top or bottom row.<br>If Clap is used, will hide before reaching the player.|
+| Double | Normal | Hold | Whistle | This is a beat that you hit on the current row, and then hit again on the other row once it reaches the end of the held beat. <br>It acts weirdly if you have other Default beats at the same time, so use caution. |
 | Flip | Flip | Instant | None | This beat will cause the current view to flip from Left to Right, or vice versa. |
 | Zoom | Flip | Instant | Whistle | This beat will cause the current view to zoom in or out. |
 | Freestyle | Extra | Instant | None | This is the beat that appears in the middle of the track, and can be hit with either top or bottom attacks. |
