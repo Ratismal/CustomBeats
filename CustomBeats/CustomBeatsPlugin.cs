@@ -55,6 +55,16 @@ namespace CustomBeats
         {
             songs = new List<string>();
             beatmaps = new List<BeatmapInfo>();
+            string[] defaultDifficulties = new[]
+            {
+                "Beginner",
+                "Easy",
+                "Normal",
+                "Hard",
+                "UNBEATABLE",
+                "Trailer",
+                "Tutorial"
+            };
             difficulties = new List<string>();
 
             string customSongDir = $"{Application.dataPath.Substring(0, Application.dataPath.LastIndexOf('/'))}/CustomBeats/Songs/";
@@ -77,7 +87,7 @@ namespace CustomBeats
                     asset.name = beatmapName;
                     var difficultyMatch = Regex.Match(content, "Version: *(.+?)\r?\n");
                     string difficulty = difficultyMatch.Groups[1].Value;
-                    if (!difficulties.Contains(difficulty))
+                    if (!defaultDifficulties.Contains(difficulty) && !difficulties.Contains(difficulty))
                     {
                         difficulties.Add(difficulty);
                     }
@@ -99,6 +109,12 @@ namespace CustomBeats
                     songs.Add(songName);
                 }
             }
+
+            var allDifficulties = defaultDifficulties.Concat(difficulties).ToList();
+            beatmaps.Sort(delegate(BeatmapInfo x, BeatmapInfo y)
+            {
+                return allDifficulties.IndexOf(x.difficulty) - allDifficulties.IndexOf(y.difficulty);
+            });
 
             dirty = true;
         }
