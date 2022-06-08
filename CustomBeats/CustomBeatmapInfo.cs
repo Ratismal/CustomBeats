@@ -9,13 +9,12 @@ using UnityEngine;
 
 namespace CustomBeats
 {
-    class CustomBeatmapInfo : BeatmapInfo
+    public class CustomBeatmapInfo : BeatmapInfo
     {
         public string _audioKey;
-        public CustomBeatmapInfo(TextAsset textAsset, string songName, string difficulty, string clipName) : base(textAsset, songName,
-            difficulty)
+        public CustomBeatmapInfo(TextAsset textAsset, string songName, string difficulty, string clipName) : base(textAsset, difficulty)
         {
-            _audioKey = "../../CustomBeats/Songs/" + songName + "/" + clipName;
+            _audioKey = "CustomBeats/Songs/" + songName + "/" + clipName;
         }
     }
 }

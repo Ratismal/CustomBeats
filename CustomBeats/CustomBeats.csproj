@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CustomBeats</RootNamespace>
     <AssemblyName>CustomBeats</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -46,6 +47,12 @@
     <Reference Include="BepInEx.Harmony">
       <HintPath>Libs\BepInEx.Harmony.dll</HintPath>
     </Reference>
+    <Reference Include="FMODUnity">
+      <HintPath>Libs\FMODUnity.dll</HintPath>
+    </Reference>
+    <Reference Include="FMODUnityResonance">
+      <HintPath>Libs\FMODUnityResonance.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>Libs\Mono.Cecil.dll</HintPath>
     </Reference>
@@ -73,6 +80,7 @@
   <ItemGroup>
     <Compile Include="CustomBeatmapInfo.cs" />
     <Compile Include="CustomBeatsPlugin.cs" />
+    <Compile Include="CustomBeatsSong.cs" />
     <Compile Include="Patches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -97,6 +105,8 @@ cp CustomBeats.dll BepInEx/plugins/CustomBeats
 mkdir CustomBeats
 mkdir CustomBeats\Songs
 tar.exe -a -c -f CustomBeats-v@(VersionNumber).zip BepInEx CustomBeats
+
+copy /Y CustomBeats.dll "E:\SteamLibrary\steamapps\common\UNBEATABLE [white label]\BepInEx\scripts"
 
 rd /s /q BepInEx
 rd /s /q CustomBeats</PostBuildEvent>

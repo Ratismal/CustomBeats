@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Hosting;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using FMOD;
 using FMOD.Studio;
+using FMODUnity;
 using HarmonyLib;
 using Rhythm;
 using UnityEngine;
@@ -15,55 +19,45 @@ namespace CustomBeats
 {
     class Patches
     {
-        private static string[] originalSongs;
-        private static BeatmapInfo[] originalBeatmapInfos;
-        private static string[] originalDifficulties;
+        public static List<BeatmapIndex.Song> originalSongs;
 
         private static List<string> originalMenuSongs;
 
-        [HarmonyPatch(typeof(BeatmapIndex), "UpdateCache")]
+        [HarmonyPatch(typeof(BeatmapIndex), "OnAfterDeserialize")]
         [HarmonyPrefix]
-        static void BeatmapIndexUpdateCache(BeatmapIndex __instance, Dictionary<string, BeatmapInfo> ___cachedByName, Dictionary<string, List<BeatmapInfo>> ___cachedBySong, Dictionary<string, BeatmapInfo> ___cachedByPath)
+        static void BeatmapIndexUpdateCache(BeatmapIndex __instance, ref List<BeatmapIndex.Song> ___songs)
         {
+            CustomBeatsPlugin.LOGGER.LogInfo("Loading songs in OnAfterDeserialize");
+
             if (originalSongs == null)
             {
-                originalSongs = __instance.songNames;
-                originalBeatmapInfos = __instance.beatmaps;
-                originalDifficulties = __instance.difficulties;
+                originalSongs = new List<BeatmapIndex.Song>();
+                foreach (var song in ___songs)
+                {
+                    if (CustomBeatsPlugin.INSTANCE.songs.Find(s => s.name == song.name) == null)
+                    {
+                        originalSongs.Add(song);
+                    }
+                }
             }
+            
+            List<BeatmapIndex.Song> newSongs = new List<BeatmapIndex.Song>();
 
-            __instance.songNames = originalSongs.Concat(CustomBeatsPlugin.INSTANCE.songs).ToArray();
-            __instance.beatmaps = originalBeatmapInfos.Concat(CustomBeatsPlugin.INSTANCE.beatmaps).ToArray();
-            __instance.difficulties = originalDifficulties.Concat(CustomBeatsPlugin.INSTANCE.difficulties).ToArray();
+            CustomBeatsPlugin.LOGGER.LogInfo("Original Songs: " + originalSongs.Count + " | New Songs: " + CustomBeatsPlugin.INSTANCE.songs.Count);
 
-            foreach (var beatmap in __instance.beatmaps)
+            foreach (var song in originalSongs)
             {
-                if (!___cachedByName.ContainsKey(beatmap.name))
-                {
-                    ___cachedByName.Add(beatmap.name, beatmap);
-                }
-                if (!___cachedBySong.ContainsKey(beatmap.songName))
-                {
-                    ___cachedBySong.Add(beatmap.songName, new List<BeatmapInfo>() { beatmap });
-                }
-                string path = beatmap.songName + "/" + beatmap.difficulty;
-                if (!___cachedByPath.ContainsKey(path))
-                {
-                    ___cachedByPath.Add(path, beatmap);
-                }
+                newSongs.Add(song);
             }
-        }
 
-        [HarmonyPatch(typeof(BeatmapInfo), "audioKey", MethodType.Getter)]
-        [HarmonyPrefix]
-        static bool BeatmapInfoAudioKey(BeatmapInfo __instance, ref string __result)
-        {
-            if (__instance is CustomBeatmapInfo)
+            foreach (var song in CustomBeatsPlugin.INSTANCE.songs)
             {
-                __result = ((CustomBeatmapInfo) __instance)._audioKey;
-                return false;
+                newSongs.Add(song);
             }
-            return true;
+
+            CustomBeatsPlugin.LOGGER.LogInfo("We now have " + newSongs.Count + " songs.");
+
+            ___songs = newSongs;
         }
 
         [HarmonyPatch(typeof(WhiteLabelMainMenu), "Start")]
@@ -79,8 +73,10 @@ namespace CustomBeats
 
             foreach (var song in CustomBeatsPlugin.INSTANCE.songs)
             {
-                ___songs.Add(song);
+                ___songs.Add(song.name);
             }
+
+            CustomBeatsPlugin.LOGGER.LogInfo("[START] Song count: " + ___songs.Count);
 
             ___songsInc = new WrapCounter(___songs.Count);
         }
@@ -93,37 +89,73 @@ namespace CustomBeats
             {
                 foreach (var song in CustomBeatsPlugin.INSTANCE.songs)
                 {
-                    if (!___songs.Contains(song))
+                    if (!___songs.Contains(song.name))
                     {
-                        ___songs.Add(song);
+                        ___songs.Add(song.name);
                     }
                 }
+                CustomBeatsPlugin.LOGGER.LogInfo("[LevelSelect] Song count: " + ___songs.Count);
 
                 ___songsInc = new WrapCounter(___songs.Count);
                 CustomBeatsPlugin.INSTANCE.dirty = false;
 
-                ___beatmapIndex.UpdateCache();
+                ___beatmapIndex.OnAfterDeserialize();
             }
         }
 
-        [HarmonyPatch(typeof(BeatmapParser), "ParseBeatmap")]
+        
+        [HarmonyPatch(typeof(BeatmapParser), "ParseBeatmap", new Type[] {} )]
         [HarmonyPostfix]
         static void WhiteLabelMainMenDASDSADSADt(BeatmapParser __instance)
         {
-            // I don't know why, but if this patch doesn't exist it doesn't detect beatmapInfo as a CustomBeatmapInfo class.
-            // So I guess I'm just leaving it here?
             BeatmapInfo beatmapInfo = __instance.beatmapIndex.FindByPath(__instance.beatmapPath);
-            // CustomBeatsPlugin.LOGGER.LogInfo(beatmapInfo.name);
 
             if (beatmapInfo is CustomBeatmapInfo)
             {
-                // CustomBeatsPlugin.LOGGER.LogInfo("I am losing my mind.");
-            }
-            else
-            {
-                // CustomBeatsPlugin.LOGGER.LogInfo("I am losing my mind even more.");
+                __instance.audioKey = ((CustomBeatmapInfo) beatmapInfo)._audioKey;
             }
         }
-        
+
+        [HarmonyPatch(typeof(RhythmTracker), "PreloadFromTable", new Type[] { typeof(string) })]
+        [HarmonyPostfix]
+        static void PreloadPatch(RhythmTracker __instance, string key, ref EventInstance ___instance)
+        {
+            if (key.StartsWith("CustomBeats"))
+            {
+                if (___instance.isValid())
+                {
+                    // Needs to be ALLOWFADEOUT or it just doesn't work for some reason?
+                    // Thus, cannot use __instance.StopAndRelease
+                    // I spent 2 hours figuring this out >.>
+                    ___instance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+                    ___instance.release();
+                }
+                
+                __instance.Preload(PlaySource.FromFile, key);
+            }
+        }
+
+        [HarmonyPatch(typeof(WhiteLabelMainMenu), "PlaySongPreview", new Type[] { typeof(string) })]
+        [HarmonyPostfix]
+        static void PlaySongPreviewPatch(RhythmTracker __instance, string audioPath, ref EventInstance ___songPreviewInstance, ref EventReference ___songPreviewEvent)
+        {
+            var song = CustomBeatsPlugin.INSTANCE.songs.Find(s => s.name == audioPath);
+
+            if (song != null)
+            {
+                var info = song.Beatmaps.First().Value;
+                var path = (info as CustomBeatmapInfo)._audioKey;
+
+                if (___songPreviewInstance.isValid())
+                {
+                    ___songPreviewInstance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+                    ___songPreviewInstance.release();
+                }
+                ___songPreviewInstance = RuntimeManager.CreateInstance(___songPreviewEvent);
+                RhythmTracker.PrepareInstance(___songPreviewInstance, PlaySource.FromFile, path);
+                ___songPreviewInstance.setPitch(JeffBezosController.songSpeed);
+                ___songPreviewInstance.start();
+            }
+        }
     }
 }

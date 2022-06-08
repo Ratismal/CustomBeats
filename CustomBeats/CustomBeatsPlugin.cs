@@ -12,6 +12,7 @@ using BepInEx.Logging;
 using FMOD;
 using FMODUnity;
 using HarmonyLib;
+using JetBrains.Annotations;
 using Rhythm;
 using UnityEngine;
 using Logger = BepInEx.Logging.Logger;
@@ -25,9 +26,7 @@ namespace CustomBeats
         public static ManualLogSource LOGGER;
 
         public bool dirty = false;
-        public List<string> songs;
-        public List<BeatmapInfo> beatmaps;
-        public List<string> difficulties;
+        public List<BeatmapIndex.Song> songs;
 
         private Harmony harmony;
 
@@ -53,19 +52,18 @@ namespace CustomBeats
 
         void LoadSongs()
         {
-            songs = new List<string>();
-            beatmaps = new List<BeatmapInfo>();
-            string[] defaultDifficulties = new[]
+            songs = new List<BeatmapIndex.Song>();
+            List<string> difficulties = new List<string>
             {
                 "Beginner",
                 "Easy",
                 "Normal",
+                "Regular",
                 "Hard",
                 "UNBEATABLE",
                 "Trailer",
                 "Tutorial"
             };
-            difficulties = new List<string>();
 
             string customSongDir = $"{Application.dataPath.Substring(0, Application.dataPath.LastIndexOf('/'))}/CustomBeats/Songs/";
             if (!Directory.Exists(customSongDir)) Directory.CreateDirectory(customSongDir);
@@ -78,6 +76,9 @@ namespace CustomBeats
                 Logger.LogInfo("Loading song " + songName);
                 bool hasMaps = false;
 
+                string stageScene = "";
+                List<BeatmapInfo> beatmaps = new List<BeatmapInfo>();
+
                 string[] osuFiles = Directory.GetFiles(dir, "*.osu");
                 foreach (var osuFile in osuFiles)
                 {
@@ -87,10 +88,7 @@ namespace CustomBeats
                     asset.name = beatmapName;
                     var difficultyMatch = Regex.Match(content, "Version: *(.+?)\r?\n");
                     string difficulty = difficultyMatch.Groups[1].Value;
-                    if (!defaultDifficulties.Contains(difficulty) && !difficulties.Contains(difficulty))
-                    {
-                        difficulties.Add(difficulty);
-                    }
+
                     var titleMatch = Regex.Match(content, "Title: *(.+?)\r?\n");
                     string title = titleMatch.Groups[1].Value;
                     var clipMatch = Regex.Match(content, "AudioFilename: *(.+?)\r?\n");
@@ -100,21 +98,26 @@ namespace CustomBeats
 
                     CustomBeatmapInfo beatmap = new CustomBeatmapInfo(asset, songName, difficulty, clip);
 
+                    if (!difficulties.Contains(difficulty))
+                    {
+                        Logger.LogInfo(" - Adding new difficulty " + difficulty);
+                        difficulties.Add(difficulty);
+                    }
+
                     beatmaps.Add(beatmap);
-                    hasMaps = true;
                 }
 
-                if (hasMaps)
+                if (beatmaps.Count > 0)
                 {
-                    songs.Add(songName);
+                    beatmaps.Sort((BeatmapInfo x, BeatmapInfo y) => difficulties.IndexOf(x.difficulty) - difficulties.IndexOf(y.difficulty));
+
+                    var song = new CustomBeatsSong(songName);
+                    song.SetBeatmaps(beatmaps);
+
+
+                    songs.Add(song);
                 }
             }
-
-            var allDifficulties = defaultDifficulties.Concat(difficulties).ToList();
-            beatmaps.Sort(delegate(BeatmapInfo x, BeatmapInfo y)
-            {
-                return allDifficulties.IndexOf(x.difficulty) - allDifficulties.IndexOf(y.difficulty);
-            });
 
             dirty = true;
         }
